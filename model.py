@@ -5,7 +5,7 @@ import numpy as np
 import torch.nn.functional as F
 
 # DenseNet-BC (4 DENSE BLOCKS)
-class DenseUnit(torch.nn.Module):               # BN-ReLU-Conv(1×1) > 4k > -BN-ReLU-Conv(3×3)
+class DenseUnit(torch.nn.Module):               # BN-ReLU-Conv(1×1) > 4*growth_rate > -BN-ReLU-Conv(3×3)
   def __init__(self,c_in,growth_rate,idx,drop_rate):
     super(DenseUnit,self).__init__()
     self.bn1 = torch.nn.BatchNorm2d(c_in)
@@ -83,8 +83,8 @@ class DenseNet_Pro(torch.nn.Module):              # conv_in > MaxPool > BLK1 > T
 
     self.conv_in = torch.nn.Conv2d(in_channels = 3, out_channels = 2*self.grl, kernel_size = 3,
                                  stride = 1, padding = 1)
-    self.bn_in = torch.nn.BatchNorm2d(2*self.grl)
-    self.pool_in = torch.nn.MaxPool2d(kernel_size = 2)
+    #self.bn_in = torch.nn.BatchNorm2d(2*self.grl)
+    #self.pool_in = torch.nn.MaxPool2d(kernel_size = 2)
     self.relu = torch.nn.ReLU(inplace=True)
 
     self.denseblk1 = DenseBLK(2*self.grl, self.grl, self.bnl[0], self.drop_rate)
@@ -106,12 +106,12 @@ class DenseNet_Pro(torch.nn.Module):              # conv_in > MaxPool > BLK1 > T
 
     self.bn_out = torch.nn.BatchNorm2d(self.blk4_in + self.grl*self.bnl[3])
     self.pool_out = torch.nn.AdaptiveAvgPool2d((1, 1))
-    #self.pool_out = torch.nn.AvgPool2d(kernel_size = 2)
-    #self.dropout = torch.nn.Dropout(p = self.drop_rate)
     self.linear = torch.nn.Linear(self.blk4_in + self.grl*self.bnl[3],10)  #denseblk = 3 : if conv_in padding = 1 then 2*2*(int(self.ts2_in*self.theta)+ self.grl[2]*(self.bnl[2]))
                                                                               #denseblk = 4 : self.blk4_in + self.grl[3]*self.bnl[3]
   def forward(self,x):
-    out = self.pool_in(self.relu(self.bn_in(self.conv_in(x))))
+   # out = self.pool_in(self.relu(self.bn_in(self.conv_in(x)))) #### this for ImageNet
+    out = self.conv_in(x)
+    
     out = self.denseblk1(out)
     out = self.ts1(out)
     out = self.denseblk2(out)

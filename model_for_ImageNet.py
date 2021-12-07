@@ -109,7 +109,7 @@ class DenseNet_Pro(torch.nn.Module):              # conv_in + bn + relu + MaxPoo
     self.relu = torch.nn.ReLU()
     self.bn_out = torch.nn.BatchNorm2d(blk4_in + growth_rate*blk_num_list[3])
     self.pool_out = torch.nn.AdaptiveAvgPool2d((1, 1))
-    self.linear = torch.nn.Linear(blk4_in + growth_rate*blk_num_list[3],10) 
+    self.linear = torch.nn.Linear(blk4_in + growth_rate*blk_num_list[3], 1000) 
     
   def forward(self,x):
     out = self.in_process(x)# 112*112 > 56*56

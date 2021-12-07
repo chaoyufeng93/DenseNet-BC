@@ -77,47 +77,50 @@ class DenseTs(torch.nn.Module):
 class DenseNet_Pro(torch.nn.Module):              # conv_in > MaxPool > BLK1 > TS1 > BLK2 > TS2 > BLK3 > TS3 > BLK4 > AvgPool > FC
   def __init__(self, growth_rate, blk_num_list,theta, drop_rate):
     super(DenseNet_Pro,self).__init__()
+    self.bn_in = BatchNorm2d(3)
+    self.relu = torch.nn.ReLU()
     self.conv_in = torch.nn.Conv2d(
         in_channels = 3,
         out_channels = 2*growth_rate,
-        kernel_size = 3,
-        stride = 1,
-        padding = 1
+        kernel_size = 7,
+        stride = 2,
+        padding = 3
     )
+    self.max_pool = torch.nn.MaxPool2d(kernel_size = 3, stride = 2, padding = 1)
     self.denseblk1 = DenseBLK(2*growth_rate, growth_rate, blk_num_list[0], drop_rate)
-    self.ts1_in = 2*growth_rate + growth_rate*(blk_num_list[0])                                           
-    self.ts1 = DenseTs(self.ts1_in, theta, drop_rate)
+    ts1_in = 2*growth_rate + growth_rate*(blk_num_list[0])                                           
+    self.ts1 = DenseTs(ts1_in, theta, drop_rate)
 
-    self.blk2_in = int(self.ts1_in*theta)                       
-    self.denseblk2 = DenseBLK(self.blk2_in, growth_rate, blk_num_list[1], drop_rate)
-    self.ts2_in = self.blk2_in + growth_rate*(blk_num_list[1])
+    blk2_in = int(ts1_in*theta)                       
+    self.denseblk2 = DenseBLK(blk2_in, growth_rate, blk_num_list[1], drop_rate)
+    ts2_in = blk2_in + growth_rate*(blk_num_list[1])
     self.ts2 = DenseTs(self.ts2_in, theta, drop_rate)
 
-    self.blk3_in = int(self.ts2_in*theta)
-    self.denseblk3 = DenseBLK(self.blk3_in, growth_rate, blk_num_list[2], drop_rate) #if ts3 > after H*W = 2*2 
-    self.ts3_in = self.blk3_in + growth_rate*blk_num_list[2]
-    self.ts3 = DenseTs(self.ts3_in, theta, drop_rate)
+    blk3_in = int(ts2_in*theta)
+    self.denseblk3 = DenseBLK(blk3_in, growth_rate, blk_num_list[2], drop_rate) #if ts3 > after H*W = 2*2 
+    ts3_in = self.blk3_in + growth_rate*blk_num_list[2]
+    self.ts3 = DenseTs(ts3_in, theta, drop_rate)
 
-    self.blk4_in = int(self.ts3_in*theta)
-    self.denseblk4 = DenseBLK(self.blk4_in, growth_rate, blk_num_list[3], drop_rate)
+    blk4_in = int(ts3_in*theta)
+    self.denseblk4 = DenseBLK(blk4_in, growth_rate, blk_num_list[3], drop_rate)
 
     self.bn_out = torch.nn.BatchNorm2d(self.blk4_in + growth_rate*blk_num_list[3])
-    self.relu = torch.nn.ReLU()
     self.pool_out = torch.nn.AdaptiveAvgPool2d((1, 1))
-    self.linear = torch.nn.Linear(self.blk4_in + growth_rate*blk_num_list[3],10) 
+    self.linear = torch.nn.Linear(blk4_in + growth_rate*blk_num_list[3],10) 
     
   def forward(self,x):
-    # if use for ImageNet, then the first in should be: self.max_pooling(self.conv_in(x)) (224*224 > 112*112(conv) > 56*56(pooling))
-    out = self.conv_in(x)
+    out = self.relu(self.bn_in(x))
+    out = self.conv_in(out) # 112*112
+    out = self.max_pool(out) # 56*56
 
     out = self.denseblk1(out)
-    out = self.ts1(out)
+    out = self.ts1(out) #28*28
 
     out = self.denseblk2(out)
-    out = self.ts2(out)
+    out = self.ts2(out) #14*14
 
     out = self.denseblk3(out)
-    out = self.ts3(out)
+    out = self.ts3(out) #7*7
 
     out = self.denseblk4(out)
     

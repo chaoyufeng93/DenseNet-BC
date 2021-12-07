@@ -11,7 +11,7 @@ class DenseUnit(torch.nn.Module):               # BN-ReLU-Conv(1×1) > 4k > -BN-
         padding = 0
     )
     self.bn3 = torch.nn.BatchNorm2d(4*growth_rate)
-    self.relu = torch.nn.ReLU(inplace = True)
+    self.relu = torch.nn.ReLU()
     self.conv3 = torch.nn.Conv2d(
         in_channels = 4*growth_rate,
         out_channels = growth_rate,
@@ -51,7 +51,7 @@ class DenseTs(torch.nn.Module):
   def __init__(self,c_in,theta,drop_rate):
     super(DenseTs,self).__init__()
     self.bn1 = torch.nn.BatchNorm2d(c_in)
-    self.relu = torch.nn.ReLU(inplace=True)
+    self.relu = torch.nn.ReLU()
     self.conv1 = torch.nn.Conv2d(
         in_channels = c_in,
         out_channels = int(c_in*theta),

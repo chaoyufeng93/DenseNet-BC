@@ -97,17 +97,17 @@ class DenseNet_Pro(torch.nn.Module):              # conv_in + bn + relu + MaxPoo
     blk2_in = int(ts1_in*theta)                       
     self.denseblk2 = DenseBLK(blk2_in, growth_rate, blk_num_list[1], drop_rate)
     ts2_in = blk2_in + growth_rate*(blk_num_list[1])
-    self.ts2 = DenseTs(self.ts2_in, theta, drop_rate)
+    self.ts2 = DenseTs(ts2_in, theta, drop_rate)
 
     blk3_in = int(ts2_in*theta)
     self.denseblk3 = DenseBLK(blk3_in, growth_rate, blk_num_list[2], drop_rate) #if ts3 > after H*W = 2*2 
-    ts3_in = self.blk3_in + growth_rate*blk_num_list[2]
+    ts3_in = blk3_in + growth_rate*blk_num_list[2]
     self.ts3 = DenseTs(ts3_in, theta, drop_rate)
 
     blk4_in = int(ts3_in*theta)
     self.denseblk4 = DenseBLK(blk4_in, growth_rate, blk_num_list[3], drop_rate)
     self.relu = torch.nn.ReLU()
-    self.bn_out = torch.nn.BatchNorm2d(self.blk4_in + growth_rate*blk_num_list[3])
+    self.bn_out = torch.nn.BatchNorm2d(blk4_in + growth_rate*blk_num_list[3])
     self.pool_out = torch.nn.AdaptiveAvgPool2d((1, 1))
     self.linear = torch.nn.Linear(blk4_in + growth_rate*blk_num_list[3],10) 
     
@@ -130,5 +130,4 @@ class DenseNet_Pro(torch.nn.Module):              # conv_in + bn + relu + MaxPoo
     out = out.view(out.size(0), -1)
     out = self.linear(out)
     return out
-  
 #mod = DenseNet_Pro(32,[6,12,24,16],0.5,0.2) DenseNet-BC-121

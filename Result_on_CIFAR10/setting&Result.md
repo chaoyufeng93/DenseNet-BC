@@ -1,3 +1,5 @@
+Batch size: 64
+
 Data Augmentation: RandomCrop(32, padding=4) & transforms.RandomHorizontalFlip()
 
 SGD: weight_decay = 1e-4,momentum = 0.9,nesterov=True
